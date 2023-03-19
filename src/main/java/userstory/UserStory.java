@@ -1,6 +1,7 @@
-package userStory;
+package userstory;
 
 import java.sql.*;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -10,19 +11,21 @@ public class UserStory {
     private final String bdName;
     private final String login;
     private final String password;
+    private final String port;
 
-    public UserStory(String serverName, String bdName, String login, String password) {
+    public UserStory(String serverName, String bdName, String login, String password, String port) {
         this.serverName = serverName;
         this.bdName = bdName;
         this.login = login;
         this.password = password;
+        this.port = port;
     }
 
     public Connection setConnection() {
         Connection connection = null;
         try {
             Class.forName("org.postgresql.Driver");
-            String datasourceUrl = "jdbc:postgresql://" + serverName + ":5432/" + bdName;
+            String datasourceUrl = "jdbc:postgresql://" + serverName + ":" + port + "/" + bdName;
             connection = DriverManager.getConnection(datasourceUrl, login, password);
         } catch (ClassNotFoundException | SQLException e) {
             logger.log(Level.SEVERE, "Соединение с базой данных не может быть установлено, проверьте настройки подключения");
@@ -33,14 +36,13 @@ public class UserStory {
 
     public ResultSet createQuery(String sqlQuery) {
         ResultSet resultSet = null;
-        if (!(sqlQuery.startsWith("SELECT") || sqlQuery.startsWith("select"))) {
+        if (!(sqlQuery.toUpperCase(Locale.ROOT).startsWith("SELECT"))) {
             logger.log(Level.WARNING, "Программа выполняет только запросы SELECT. Проверьте правильность запроса");
             throw new SQLQueryException("Программа выполняет только запросы SELECT. Проверьте правильность запроса");
         }
 
-        try {
-            Connection connection = setConnection();
-            Statement statement = connection.createStatement();
+        try (Connection connection = setConnection();
+             Statement statement = connection.createStatement()) {
             resultSet = statement.executeQuery(sqlQuery);
 
         } catch (SQLException e) {
